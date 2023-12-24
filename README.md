@@ -1,4 +1,4 @@
-This folder computes the CCI index developed in 'Getting through: communicating complex information' Bank of England Staff Working Paper 1,047 and CEPR Discussion Paper 18,357. 
+This folder computes the Conceptual Complexity Index (CCI) developed in 'Getting through: communicating complex information' Bank of England Staff Working Paper 1,047 and CEPR Discussion Paper 18,357. 
 
 Instructions: 
 
