@@ -12,7 +12,6 @@ library(dplyr)
 library(quanteda)
 library(nsyllable)
 library(tm)
-library(corpus) #maybe this is easier than quanteda
 library(readxl)
 library(xtable)
 library(DT)
@@ -38,10 +37,6 @@ library(zoo)
 ########################## Step 2: load the dictionary dfs #######################
 ##################################################################################.
 
-# load dictionary of jargon terms. This will 13 dataframes and vectors:
-# 'dictionary_jargon_phrases.Rda' and 'dictionary_jargon_all_tokens' are used in Step 4 for identifying jargon phrases and tokens.
-# 'dictionary_with_topics.Rda' is a 'readable' version of the full dictionary and the topic categorisations.
-# 'topic_X' contains the 'tokenised' jargon terms for each topic, respectively, used in Step 5. 
 setwd("/Users/matthewnaylor/Ling_Comp_CB_Comms/CCI Function")
 load("jargon_dictionary.Rda")
 
@@ -68,23 +63,6 @@ tokenise = function(text){
 }
 
 docs_tokens = tokenise(docs$text)
-
-# docs$text = docs$text %>%
-#   str_replace_all("(('|’) )", " ") %>%
-#   str_replace_all("(-)", " ") %>%
-#   str_replace_all("(('|’)s)", "") %>%
-#   str_replace_all("(('|’)re)", "re") %>%
-#   str_replace_all("(('|’)ve)", "ve")
-# 
-# #### (b) Convert the 'raw' text into tokens, convert to lower case, and 'stem' the terms. This is needed to then identify jargon words/phrases.
-# docs_tokens = as.character(lapply(docs$text, tolower))%>% #convert to lower case
-#   tokens(remove_numbers = TRUE, remove_punct = TRUE) %>% #convert to tokens
-#   tokens_wordstem(language = quanteda_options("language_stemmer")) #now we can stem the words using Porter Stemmer method -> so that 'policy' and 'policies' are not counted as separate word for e.g.
-# 
-# tokenise = function(x){
-#   as.character(lapply(x, tolower))%>% #convert to lower case
-#     tokens(remove_numbers = TRUE, remove_punct = TRUE) %>% #convert to tokens
-    # tokens_wordstem(language = quanteda_options("language_stemmer"))} #now we can stem the words using Porter Stemmer method -> so that 'policy' and 'policies' are not counted as separate word for e.g.
 
 
 ##################################################################################.
@@ -168,8 +146,7 @@ docs_jargon_topics_df = docs_jargon_df %>%
 ### (a) Loop to construct inputs to the CC Index for each topic for each document
 
 jargon_terms_by_topic = vector()
-# number_of_jargon_terms_by_topic = vector()
-number_of_jargon_terms_by_topic_mod = vector()
+number_of_jargon_terms_by_topic = vector()
 unique_jargon_terms_by_topic = vector()
 number_of_unique_jargon_terms_by_topic = vector()
 count_of_each_unique_jargon_term_by_topic = vector()
@@ -203,7 +180,7 @@ for(d in 1:length(docs_jargon_topics_df$Quarter)){
     
     #how many jargon terms are in each topic? 
     # length_jargon[[t]] = length(jargon[[t]]) #here we treat 'interest rate' as a single jargon term. (consistent with what we do below in saying this is a single 'term' in a topic)
-    length_jargon_mod[[t]] = length(unlist(str_split(str_replace_all(jargon[[t]], "_", " "), " "))) #here we construct an alterantive vector, which treats 'interest rate' as two separate words, for purposes of calculating PoJ. We will then later still treat 'interest rate' as a single term for purposes of distinguishing the topics.
+    length_jargon[[t]] = length(unlist(str_split(str_replace_all(jargon[[t]], "_", " "), " "))) #here we construct an alternative vector, which treats 'interest rate' as two separate words, for purposes of calculating PoJ. We will then later still treat 'interest rate' as a single term for purposes of distinguishing the topics.
     
     #then identify the unique terms/phrases in each topic. Here we use the non-mod version (i.e. jargon) such that 'interest rates' counts as one unique term rather than 'interest' and 'rates' counting as two. 
     unique_jargon[[t]] = unique(jargon[[t]]) #first as list
@@ -226,8 +203,7 @@ for(d in 1:length(docs_jargon_topics_df$Quarter)){
   }
   # now add the variables i am interested in: unlist(length_jargon), toString(jargon_vector), unlist(length_unique_jargon), toString(unique_jargon_vector), toString(unique_jargon_count_collapsed)
   jargon_terms_by_topic[d] = toString(jargon_vector)
-  # number_of_jargon_terms_by_topic[d] = toString(unlist(length_jargon))
-  number_of_jargon_terms_by_topic_mod[d] = toString(unlist(length_jargon_mod))
+  number_of_jargon_terms_by_topic[d] = toString(unlist(length_jargon))
   unique_jargon_terms_by_topic[d] = toString(unique_jargon_vector)
   number_of_unique_jargon_terms_by_topic[d] = toString(unlist(length_unique_jargon))
   count_of_each_unique_jargon_term_by_topic[d] = toString(unique_jargon_count_collapsed)
@@ -238,21 +214,18 @@ for(d in 1:length(docs_jargon_topics_df$Quarter)){
 CCI_df = docs_jargon_topics_df %>%
   # First, add the variables constructed in the loop above to the main dataframe
   cbind(jargon_terms_by_topic,
-        # number_of_jargon_terms_by_topic,
-        number_of_jargon_terms_by_topic_mod,
+        number_of_jargon_terms_by_topic,
         unique_jargon_terms_by_topic,
         number_of_unique_jargon_terms_by_topic,
         count_of_each_unique_jargon_term_by_topic) %>%
   # Now we can start to compute variables that feed into the CCI Index 
   dplyr::group_by(Quarter) %>%
-  dplyr::mutate(# Wj = sum(as.numeric(unlist(str_split(number_of_jargon_terms_by_topic, ",")))),
-    Wj_mod = sum(as.numeric(unlist(str_split(number_of_jargon_terms_by_topic_mod, ",")))),
-    Wi = ntoken(tokens(text)),
-    # PoJ = Wj/Wi,
-    PoJ = Wj_mod/Wi, #consistent with PJ 
+  dplyr::mutate(
+    Wj = sum(as.numeric(unlist(str_split(number_of_jargon_terms_by_topic, ",")))),
+    Wi = ntoken(tokens(text), remove_punct=TRUE),
+    PoJ = Wj/Wi, 
     wjt = count_of_each_unique_jargon_term_by_topic,
-    # Wjt = number_of_jargon_terms_by_topic,
-    Wjt = number_of_jargon_terms_by_topic_mod)
+    Wjt = number_of_jargon_terms_by_topic)
 
 ###############################################################################################.
 ############# Step 7: Create loop to construct the input variables and calculate CC Index #####
@@ -278,7 +251,7 @@ for(d in 1:length(CCI_df$Quarter)){
     sum_sjt2 = sum(sjt^2)
     omega_t[t] = sqrt(sum_sjt2) #concentration for that topic
     Omega_t[t] = ifelse(omega_t[t]>0, 2^(log(omega_t[t], base=10)),0) #this transformation ensures that the complexity doubles for every x10 reduction in concentration. i.e. (omega = 1, Omega = 1), (omega = 0.1, Omega =0.5), (omega = 0.01, Omega = 0.25) 
-    Wjt_star_t[t] = ifelse(Omega_t[t]>0, as.numeric(unlist(str_split(CCI_df$Wjt[d], ","))[t])/Omega_t[t], 0) #essentially Wjt_mod/omega_t
+    Wjt_star_t[t] = ifelse(Omega_t[t]>0, as.numeric(unlist(str_split(CCI_df$Wjt[d], ","))[t])/Omega_t[t], 0) #essentially Wjt/omega_t
   }
   omega[d] = toString(omega_t)
   Omega[d] = toString(Omega_t)
