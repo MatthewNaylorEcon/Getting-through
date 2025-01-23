@@ -12,7 +12,6 @@ library(dplyr)
 library(quanteda)
 library(nsyllable)
 library(tm)
-library(corpus) #maybe this is easier than quanteda
 library(readxl)
 library(xtable)
 library(DT)
