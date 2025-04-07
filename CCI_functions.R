@@ -1,6 +1,6 @@
 #############################################################################################################.
 ########### Created by: Matthew Naylor 23/12/23 
-########### Updated: 23/01/2025
+########### Updated: 04/04/2025
 ########### Objectives: Contains functions needed to produce CCI measure.  
 #############################################################################################################.
 
@@ -51,7 +51,7 @@ load("jargon_dictionary.Rda")
 
 tokenise = function(text){
   # Get rid of punctuation for consistency with the dictionary structure
-   text = text %>%
+  text = text %>%
     str_replace_all("(('|’) )", " ") %>%
     str_replace_all("(-)", " ") %>%
     str_replace_all("(('|’)s)", "") %>%
@@ -247,7 +247,9 @@ for(d in 1:length(CCI_df$Quarter)){
   for(t in 1:length(topics)){
     within_topic_count_char = str_replace_all(unlist(str_split(CCI_df$wjt[d], ","))[t], "^ ", "") #separate the topic counts, currently in a list, by commas, then unlist (and get rid of additional spaces that emerge)
     within_topic_count_numeric = as.numeric(unlist(str_split(within_topic_count_char, " "))) #convert to numeric
-    sjt = ifelse(sum(within_topic_count_numeric)>0, within_topic_count_numeric/sum(within_topic_count_numeric), 0) #essentially wjt/Wjt
+    # sjt = ifelse(sum(within_topic_count_numeric)>0, within_topic_count_numeric/sum(within_topic_count_numeric), 0) #essentially wjt/Wjt
+    sjt = if(sum(within_topic_count_numeric)>0){
+      within_topic_count_numeric/sum(within_topic_count_numeric)} #essentially wjt/Wjt
     sjt2 = sjt^2
     sum_sjt2 = sum(sjt^2)
     omega_t[t] = sqrt(sum_sjt2) #concentration for that topic
