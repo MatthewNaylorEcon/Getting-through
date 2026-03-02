@@ -30,7 +30,7 @@ library(zoo)
 # Text data has to be in a dataframe with 2 columns: "Quarter" and "text".
 # The "Quarter" column must be class 'yearqtr'. The "text" column must be 'character' class.]
 
-setwd("/Users/matthewnaylor/Ling_Comp_CB_Comms/CCI Function")
+setwd("/Users/matthewnaylor/Getting-through")
 load("MPS_text_15Q3_23Q2.Rda")
 docs = MPS_text_15Q3_23Q2
 
@@ -39,7 +39,7 @@ docs = MPS_text_15Q3_23Q2
 ##################################################################################.
 
 # Run source code
-source("CCI_functions.R")
+source("CCI_functions_Mar26.R")
 
 # Remove all vectors/dataframes/functions but the ones below
 rm(list=setdiff(ls(), c("docs", "MPS_text_15Q3_23Q2", "CCI_df")))

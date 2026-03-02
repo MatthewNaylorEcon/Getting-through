@@ -1,6 +1,6 @@
 #############################################################################################################.
 ########### Created by: Matthew Naylor 23/12/23 
-########### Updated: 04/04/2025
+########### Updated: 24/02/26
 ########### Objectives: Contains functions needed to produce CCI measure.  
 #############################################################################################################.
 
@@ -38,8 +38,8 @@ library(zoo)
 ########################## Step 2: load the dictionary dfs #######################
 ##################################################################################.
 
-setwd("/Users/matthewnaylor/Ling_Comp_CB_Comms/CCI Function")
-load("jargon_dictionary.Rda")
+setwd("/Users/matthewnaylor/Getting-through")
+load("jargon_dictionary_Mar26.Rda")
 
 ##################################################################################.
 ########################## Step 3: clean the text data ###########################
@@ -232,17 +232,20 @@ CCI_df = docs_jargon_topics_df %>%
 ############# Step 7: Create loop to construct the input variables and calculate CC Index #####
 ###############################################################################################.
 
-#Now construct the headline sjt, omega, Wjt_star_t, Wjt_star, Phi_d, and, finally, CCI variables in a loop. 
-omega = vector()
-Omega = vector()
+#Now construct the headline sjt, psi, Wjt_star_t, Wjt_star, Phi_d, and, finally, CCI variables in a loop. 
+alpha = 2
+v = 90
+T_bar = 10
+psi = vector()
+Psi = vector()
 Wjt_star = vector()
 sum_Wjt_star = vector()
 Phi_d = vector()
 CCI = vector()
 for(d in 1:length(CCI_df$Quarter)){
   #concentration per topic 
-  omega_t = vector()
-  Omega_t = vector()
+  psi_t = vector()
+  Psi_t = vector()
   Wjt_star_t = vector() 
   for(t in 1:length(topics)){
     within_topic_count_char = str_replace_all(unlist(str_split(CCI_df$wjt[d], ","))[t], "^ ", "") #separate the topic counts, currently in a list, by commas, then unlist (and get rid of additional spaces that emerge)
@@ -252,12 +255,12 @@ for(d in 1:length(CCI_df$Quarter)){
       within_topic_count_numeric/sum(within_topic_count_numeric)} #essentially wjt/Wjt
     sjt2 = sjt^2
     sum_sjt2 = sum(sjt^2)
-    omega_t[t] = sqrt(sum_sjt2) #concentration for that topic
-    Omega_t[t] = ifelse(omega_t[t]>0, 2^(log(omega_t[t], base=10)),0) #this transformation ensures that the complexity doubles for every x10 reduction in concentration. i.e. (omega = 1, Omega = 1), (omega = 0.1, Omega =0.5), (omega = 0.01, Omega = 0.25) 
-    Wjt_star_t[t] = ifelse(Omega_t[t]>0, as.numeric(unlist(str_split(CCI_df$Wjt[d], ","))[t])/Omega_t[t], 0) #essentially Wjt/omega_t
+    psi_t[t] = sqrt(sum_sjt2) #concentration for that topic
+    Psi_t[t] = ifelse(psi_t[t]>0, psi_t[t]^(log10(alpha)),0) #this transformation ensures that the complexity doubles for every x10 reduction in concentration. i.e. (psi = 1, Psi = 1), (psi = 0.1, Psi =0.5), (psi = 0.01, Psi = 0.25) 
+    Wjt_star_t[t] = ifelse(Psi_t[t]>0, as.numeric(unlist(str_split(CCI_df$Wjt[d], ","))[t])/Psi_t[t], 0) #essentially Wjt/psi_t
   }
-  omega[d] = toString(omega_t)
-  Omega[d] = toString(Omega_t)
+  psi[d] = toString(psi_t)
+  Psi[d] = toString(Psi_t)
   Wjt_star[d] = toString(Wjt_star_t) #turn back into single string list to fit into a cell
   
   ## adjustment for the number of topics covered
@@ -266,7 +269,7 @@ for(d in 1:length(CCI_df$Quarter)){
   Wjt_star_numeric = as.numeric(unlist(str_split(Wjt_star_char, " "))) #convert to numeric
   #now check which are > 0: signifying this topic is covered
   n_topics_d = length(Wjt_star_numeric[which(Wjt_star_numeric>0)])
-  Phi_d[d] = log(10 + 90, base=10)/(log(10 + 90, base=10) - log(n_topics_d, base=10))
+  Phi_d[d] = log10(T_bar + v)/(log10(T_bar + v) - log10(n_topics_d))
   
   #Now we can compute the CC index
   Wjt_star_char = str_replace_all(unlist(str_split(Wjt_star[d], ",")), "^ ", "") #convert from list to char vector
@@ -276,7 +279,7 @@ for(d in 1:length(CCI_df$Quarter)){
 }
 
 CCI_df = CCI_df %>%
-  cbind(data.frame(omega), data.frame(Omega), data.frame(Wjt_star), data.frame(sum_Wjt_star), data.frame(Phi_d), data.frame(CCI))
+  cbind(data.frame(psi), data.frame(Psi), data.frame(Wjt_star), data.frame(sum_Wjt_star), data.frame(Phi_d), data.frame(CCI))
 
 
 
